@@ -1,28 +1,26 @@
 import styled from '@emotion/styled'
 
-export const StyledContainer = styled.div`
+export const StyledAppLayout = styled.div`
   position: relative;
   width: 100%;
-  min-height: 100vh;
-  display: flex;
-  padding: 0;
-  font-family: sans-serif;
+  height: 100vh;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  grid-column-gap: 8px;
+  justify-content: space-between;
+  align-items: stretch;
 
   .app-content {
-    flex: 1;
     min-height: 100%;
-    margin-right: 8px;
-    margin-left: 8px;
     box-shadow: 0 0 10px 1px #e9e9e9;
   }
+
   .dnd-wrap {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 200px;
-    padding: 16px;
-    border: 1px solid #f0f0f0;
     user-select: none;
+    flex-direction: column;
+    border: 1px solid #f0f0f0;
+
     .dnd-circle {
       width: 60px;
       height: 60px;
@@ -34,17 +32,30 @@ export const StyledContainer = styled.div`
       cursor: move;
     }
   }
+
   .custom-rectangle {
     position: relative;
-    z-index: 3;
-    width: 200px;
     height: 40px;
     line-height: 40px;
+    color: #333;
     cursor: move;
+    z-index: 3;
     text-align: center;
+    background-color: #fff;
     border: 1px solid #8f8f8f;
     border-radius: 6px;
+  }
+
+  .custom-circle {
+    position: relative;
+    width: 100px;
+    height: 100px;
     color: #333;
+    cursor: move;
+    z-index: 3;
+    text-align: center;
     background-color: #fff;
+    border: 1px solid #8f8f8f;
+    border-radius: 50%;
   }
 `

@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { Collapse } from 'antd'
 import { Graph, Shape } from '@antv/x6'
 import { Clipboard } from '@antv/x6-plugin-clipboard'
 import { Dnd } from '@antv/x6-plugin-dnd'
@@ -8,16 +9,22 @@ import { Snapline } from '@antv/x6-plugin-snapline'
 import type { MouseEvent } from 'react'
 
 import { defaultDataInit, nodeConfig } from './config'
-import { StyledContainer } from './styled'
+import { StyledAppLayout } from './styled'
+
+const text = `
+  A dog is a type of domesticated animal.
+  Known for its loyalty and faithfulness,
+  it can be found as a welcome guest in many households across the world.
+`
 
 const AppLayout = () => {
   const containerRef = useRef<any>(null)
+  const canvasRef = useRef<any>(null)
   const dndContainerRef = useRef<any>(null)
   const graphRef = useRef<any>(null)
   const dndRef = useRef<any>(null)
 
-  // dnd-拖动节点放在画布上
-  const startDrag = (e: MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const startDrag = (e: MouseEvent<HTMLDivElement>) => {
     const target = e.currentTarget
     const type = target.getAttribute('data-type')
     if (type) {
@@ -28,10 +35,21 @@ const AppLayout = () => {
 
   useEffect(() => {
     requestAnimationFrame(() => {
-      // 画布
+      // Calculate the width of the graph container excluding the dnd container
+      const container = containerRef.current as HTMLElement
+      const dndContainer = dndContainerRef.current as HTMLElement
+      const canvas = canvasRef.current as HTMLElement
+      const sidebarWidth = dndContainer.offsetWidth
+      const canvasWidth = container.clientWidth - sidebarWidth - 8
+      const canvasHeight = container.clientHeight
+
+      // Initialize the graph with the adjusted width
       const graph: any = new Graph({
-        container: containerRef.current,
+        container: canvas,
         autoResize: true,
+        // Use calculated width here
+        width: canvasWidth,
+        height: canvasHeight,
         grid: {
           visible: true,
           type: 'doubleMesh',
@@ -116,7 +134,6 @@ const AppLayout = () => {
 
       graphRef.current = graph
       dndRef.current = dnd
-      const canvasWidth = graph.container.clientWidth
       // 使用插件
       graph
         .use(
@@ -127,12 +144,23 @@ const AppLayout = () => {
         )
         .use(
           new Selection({
-            rubberband: true
+            enabled: true,
+            rubberband: true,
+            showNodeSelectionBox: true
           })
         )
-        .use(new Keyboard())
-        .use(new Clipboard())
-      // 快捷键与事件
+        .use(
+          new Keyboard({
+            enabled: true,
+            global: true
+          })
+        )
+        .use(
+          new Clipboard({
+            enabled: true
+          })
+        )
+
       // 复制
       graph.bindKey(['meta+c', 'ctrl+c'], () => {
         const cells = graph.getSelectedCells()
@@ -141,6 +169,7 @@ const AppLayout = () => {
         }
         return false
       })
+
       // 粘贴
       graph.bindKey(['meta+v', 'ctrl+v'], () => {
         if (!graph.isClipboardEmpty()) {
@@ -168,16 +197,17 @@ const AppLayout = () => {
         }
       }
       graph.on('node:mouseenter', () => {
-        const container: any = document.getElementById('graph-container')
-        const ports = container.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
+        const canvas = canvasRef.current as HTMLElement
+        const ports = canvas.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
         showPorts(ports, true)
       })
       graph.on('node:mouseleave', () => {
-        const container: any = document.getElementById('graph-container')
-        const ports = container.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
+        const canvas = canvasRef.current as HTMLElement
+        const ports = canvas.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
         showPorts(ports, false)
       })
 
+      graph.resize(canvasWidth, canvasHeight)
       graph.fromJSON(defaultDataInit(canvasWidth))
 
       return () => {
@@ -189,12 +219,42 @@ const AppLayout = () => {
   }, [])
 
   return (
-    <StyledContainer id="cus-container">
+    <StyledAppLayout ref={containerRef}>
       <div className="dnd-wrap" ref={dndContainerRef}>
-        <div data-type="rect" className="custom-rectangle" onMouseDown={startDrag} />
+        <Collapse
+          defaultActiveKey={['1']}
+          bordered={false}
+          expandIconPosition="end"
+          items={[
+            {
+              key: 'layer',
+              label: '一般层级',
+              children: <div>{text}</div>
+            },
+            {
+              key: 'node',
+              label: '普通节点',
+              children: (
+                <div>
+                  <div>
+                    <div data-type="rect" className="custom-rectangle" onMouseDown={startDrag} />
+                  </div>
+                  <div>
+                    <div data-type="circle" className="custom-circle" onMouseDown={startDrag} />
+                  </div>
+                </div>
+              )
+            },
+            {
+              key: 'advance',
+              label: '高级节点',
+              children: <div>{text}</div>
+            }
+          ]}
+        />
       </div>
-      <div id="graph-container" className="app-content" ref={containerRef} />
-    </StyledContainer>
+      <div className="app-content" ref={canvasRef} />
+    </StyledAppLayout>
   )
 }
 

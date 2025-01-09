@@ -11,6 +11,7 @@ const attrs = {
     }
   }
 }
+
 // 边属性
 const ports = {
   groups: {
@@ -48,11 +49,31 @@ const ports = {
 }
 
 // 矩形节点
-export const rectRectangle = {
+export const rectNode = {
   zIndex: 3,
   shape: 'rect',
   width: 200,
   height: 40,
+  attrs: {
+    body: {
+      stroke: '#8f8f8f',
+      strokeWidth: 1,
+      fill: '#fff',
+      rx: 6,
+      ry: 6
+    }
+  },
+  ports: {
+    ...ports
+  },
+  tools: ['node-editor']
+}
+
+export const circleNode = {
+  zIndex: 3,
+  shape: 'circle',
+  width: 100,
+  height: 100,
   attrs: {
     body: {
       stroke: '#8f8f8f',
@@ -84,7 +105,8 @@ export const customGroupsNode = {
 
 // 所有的对应节点关系
 export const nodeConfig: any = {
-  rect: rectRectangle
+  rect: rectNode,
+  circle: circleNode
 }
 
 // 默认数据
