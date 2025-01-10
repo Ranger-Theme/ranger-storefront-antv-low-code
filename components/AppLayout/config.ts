@@ -66,14 +66,17 @@ export const rectNode = {
   ports: {
     ...ports
   },
+  data: {
+    type: 'rect'
+  },
   tools: ['node-editor']
 }
 
 export const circleNode = {
   zIndex: 3,
   shape: 'circle',
-  width: 100,
-  height: 100,
+  width: 80,
+  height: 80,
   attrs: {
     body: {
       stroke: '#8f8f8f',
@@ -86,13 +89,46 @@ export const circleNode = {
   ports: {
     ...ports
   },
+  data: {
+    type: 'circle'
+  },
   tools: ['node-editor']
 }
 
-// 自定义群组数据
-export const customGroupsNode = {
+export const ellipseNode = {
+  zIndex: 3,
+  shape: 'ellipse',
+  width: 120,
+  height: 60,
+  attrs: {
+    label: {
+      textWrap: {
+        width: -10, // 设置自动换行宽度
+        height: 'auto' // 高度自动调整
+      }
+    },
+    body: {
+      stroke: '#8f8f8f',
+      strokeWidth: 1,
+      fill: '#fff',
+      rx: 6,
+      ry: 6
+    }
+  },
+  ports: {
+    ...ports
+  },
+  data: {
+    type: 'ellipse'
+  },
+  tools: ['node-editor']
+}
+
+export const groupsNode = {
   zIndex: 1,
   inherit: 'rect',
+  width: 100,
+  height: 100,
   attrs: {
     body: {
       fill: '#FEFFF6',
@@ -106,7 +142,9 @@ export const customGroupsNode = {
 // 所有的对应节点关系
 export const nodeConfig: any = {
   rect: rectNode,
-  circle: circleNode
+  circle: circleNode,
+  ellipse: ellipseNode,
+  groudp: groupsNode
 }
 
 // 默认数据
@@ -207,83 +245,6 @@ export const defaultDataInit = (canvasWidth: number) => {
         },
         children: ['growth-strategy', 'long-term-value', 'productivity-strategy'],
         data: {
-          disableMove: true
-        }
-      },
-      {
-        id: 'group2',
-        shape: 'rect',
-        width: canvasWidth,
-        height: 90,
-        x: 0,
-        y: 100,
-        attrs: {
-          body: {
-            fill: '#EBF8FA',
-            stroke: '#cccccc',
-            strokeWidth: 1,
-            strokeDasharray: '2 2'
-          }
-        },
-        data: {
-          disableMove: true
-        }
-      },
-      {
-        id: 'group3',
-        shape: 'rect',
-        width: canvasWidth,
-        height: 90,
-        x: 0,
-        y: 190,
-        attrs: {
-          body: {
-            fill: '#FEFFF6',
-            stroke: '#cccccc',
-            strokeWidth: 1,
-            strokeDasharray: '2 2'
-          }
-        },
-        data: {
-          disableMove: true
-        }
-      },
-      {
-        id: 'group4',
-        shape: 'rect',
-        width: canvasWidth,
-        height: 450,
-        x: 0,
-        y: 280,
-        attrs: {
-          body: {
-            fill: '#EBF8FA',
-            stroke: '#cccccc',
-            strokeWidth: 1,
-            strokeDasharray: '2 2'
-          }
-        },
-        data: {
-          disableMove: true
-        }
-      },
-      {
-        id: 'group5',
-        shape: 'rect',
-        width: canvasWidth,
-        height: 160,
-        x: 0,
-        y: 730,
-        attrs: {
-          body: {
-            fill: '#FEFFF6',
-            stroke: '#cccccc',
-            strokeWidth: 1,
-            strokeDasharray: '2 2'
-          }
-        },
-        data: {
-          groupName: 'learningAndGrowth',
           disableMove: true
         }
       }

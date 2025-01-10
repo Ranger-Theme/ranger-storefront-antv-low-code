@@ -6,16 +6,44 @@ import { Dnd } from '@antv/x6-plugin-dnd'
 import { Keyboard } from '@antv/x6-plugin-keyboard'
 import { Selection } from '@antv/x6-plugin-selection'
 import { Snapline } from '@antv/x6-plugin-snapline'
+import { History } from '@antv/x6-plugin-history'
 import type { MouseEvent } from 'react'
 
 import { defaultDataInit, nodeConfig } from './config'
-import { StyledAppLayout } from './styled'
+import { StyledAppLayout, StyledLayerItem } from './styled'
 
 const text = `
   A dog is a type of domesticated animal.
   Known for its loyalty and faithfulness,
   it can be found as a welcome guest in many households across the world.
 `
+
+const menuContainer = document.createElement('div')
+menuContainer.id = 'context-menu'
+menuContainer.style.position = 'absolute'
+menuContainer.style.display = 'none'
+menuContainer.style.background = '#fff'
+menuContainer.style.border = '1px solid #ddd'
+menuContainer.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)'
+menuContainer.style.zIndex = '1000'
+menuContainer.style.padding = '8px'
+document.body.appendChild(menuContainer)
+
+// 动态生成菜单内容
+const getMenuContent = (nodeType: string) => {
+  if (nodeType === 'ellipse') {
+    return `
+      <div id="edit-ellipse" style="padding: 4px 8px; cursor: pointer;">Edit Ellipse Label</div>
+      <div id="delete-ellipse" style="padding: 4px 8px; cursor: pointer;">Delete Ellipse Node</div>
+    `
+  } else if (nodeType === 'rect') {
+    return `
+      <div id="edit-rect" style="padding: 4px 8px; cursor: pointer;">Edit Rect Label</div>
+      <div id="delete-rect" style="padding: 4px 8px; cursor: pointer;">Delete Rect Node</div>
+    `
+  }
+  return ''
+}
 
 const AppLayout = () => {
   const containerRef = useRef<any>(null)
@@ -44,7 +72,7 @@ const AppLayout = () => {
       const canvasHeight = container.clientHeight
 
       // Initialize the graph with the adjusted width
-      const graph: any = new Graph({
+      const graph = new Graph({
         container: canvas,
         autoResize: true,
         // Use calculated width here
@@ -125,6 +153,7 @@ const AppLayout = () => {
           color: '#F2F7FA'
         }
       })
+
       // dnd
       const dnd = new Dnd({
         target: graph,
@@ -134,7 +163,8 @@ const AppLayout = () => {
 
       graphRef.current = graph
       dndRef.current = dnd
-      // 使用插件
+
+      // Graph plugins
       graph
         .use(
           new Snapline({
@@ -143,10 +173,14 @@ const AppLayout = () => {
           })
         )
         .use(
+          new History({
+            enabled: true
+          })
+        )
+        .use(
           new Selection({
             enabled: true,
-            rubberband: true,
-            showNodeSelectionBox: true
+            rubberband: true
           })
         )
         .use(
@@ -170,6 +204,14 @@ const AppLayout = () => {
         return false
       })
 
+      graph.bindKey(['meta+x', 'ctrl+x'], () => {
+        const cells = graph.getSelectedCells()
+        if (cells.length) {
+          graph.cut(cells)
+        }
+        return false
+      })
+
       // 粘贴
       graph.bindKey(['meta+v', 'ctrl+v'], () => {
         if (!graph.isClipboardEmpty()) {
@@ -179,6 +221,30 @@ const AppLayout = () => {
         }
         return false
       })
+
+      // undo redo
+      graph.bindKey(['meta+z', 'ctrl+z'], () => {
+        if (graph.canUndo()) {
+          graph.undo()
+        }
+        return false
+      })
+
+      graph.bindKey(['meta+shift+z', 'ctrl+shift+z'], () => {
+        if (graph.canRedo()) {
+          graph.redo()
+        }
+        return false
+      })
+
+      // select all
+      graph.bindKey(['meta+a', 'ctrl+a'], () => {
+        const nodes = graph.getNodes()
+        if (nodes) {
+          graph.select(nodes)
+        }
+      })
+
       // 删除
       graph.bindKey('backspace', () => {
         const cells = graph.getSelectedCells()
@@ -190,25 +256,99 @@ const AppLayout = () => {
           }
         }
       })
+
+      // zoom
+      graph.bindKey(['ctrl+1', 'meta+1'], () => {
+        const zoom = graph.zoom()
+        if (zoom < 1.5) {
+          graph.zoom(0.1)
+        }
+      })
+
+      graph.bindKey(['ctrl+2', 'meta+2'], () => {
+        const zoom = graph.zoom()
+        if (zoom > 0.5) {
+          graph.zoom(-0.1)
+        }
+      })
+
       // 控制连接桩显示/隐藏
       const showPorts = (ports: NodeListOf<SVGElement>, show: boolean) => {
         for (let i = 0, len = ports.length; i < len; i += 1) {
           ports[i].style.visibility = show ? 'visible' : 'hidden'
         }
       }
+
       graph.on('node:mouseenter', () => {
         const canvas = canvasRef.current as HTMLElement
         const ports = canvas.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
         showPorts(ports, true)
       })
+
       graph.on('node:mouseleave', () => {
         const canvas = canvasRef.current as HTMLElement
         const ports = canvas.querySelectorAll('.x6-port-body') as NodeListOf<SVGElement>
         showPorts(ports, false)
       })
 
+      // 监听右键菜单事件
+      graph.on('node:contextmenu', ({ e, node }) => {
+        e.preventDefault()
+
+        // 获取节点类型
+        const nodeType = node.getData().type
+
+        // 设置菜单内容
+        menuContainer.innerHTML = getMenuContent(nodeType)
+
+        // 显示菜单
+        menuContainer.style.display = 'block'
+        menuContainer.style.left = `${e.clientX}px`
+        menuContainer.style.top = `${e.clientY}px`
+
+        // 绑定菜单选项功能
+        if (nodeType === 'ellipse') {
+          document.getElementById('edit-ellipse')!.onclick = () => {
+            const newText = prompt(
+              'Enter new label for Ellipse Node:',
+              node.attr('label/text') || ''
+            )
+            if (newText !== null) {
+              node.attr('label/text', newText)
+            }
+            menuContainer.style.display = 'none'
+          }
+
+          document.getElementById('delete-ellipse')!.onclick = () => {
+            node.remove()
+            menuContainer.style.display = 'none'
+          }
+        } else if (nodeType === 'rect') {
+          document.getElementById('edit-rect')!.onclick = () => {
+            const newText = prompt('Enter new label for Rect Node:', node.attr('label/text') || '')
+            if (newText !== null) {
+              node.attr('label/text', newText)
+            }
+            menuContainer.style.display = 'none'
+          }
+
+          document.getElementById('delete-rect')!.onclick = () => {
+            node.remove()
+            menuContainer.style.display = 'none'
+          }
+        }
+      })
+
+      graph.on('blank:click', () => {
+        menuContainer.style.display = 'none'
+      })
+
       graph.resize(canvasWidth, canvasHeight)
       graph.fromJSON(defaultDataInit(canvasWidth))
+
+      document.body.addEventListener('click', () => {
+        menuContainer.style.display = 'none'
+      })
 
       return () => {
         if (graphRef.current) {
@@ -221,6 +361,7 @@ const AppLayout = () => {
   return (
     <StyledAppLayout ref={containerRef}>
       <div className="dnd-wrap" ref={dndContainerRef}>
+        <h5>组件栏</h5>
         <Collapse
           defaultActiveKey={['1']}
           bordered={false}
@@ -229,19 +370,31 @@ const AppLayout = () => {
             {
               key: 'layer',
               label: '一般层级',
-              children: <div>{text}</div>
+              children: (
+                <div>
+                  <StyledLayerItem>
+                    <div data-type="group" className="custom-layer" onMouseDown={startDrag} />
+                  </StyledLayerItem>
+                  <StyledLayerItem>
+                    <div data-type="custom-row" className="custom-row" onMouseDown={startDrag} />
+                  </StyledLayerItem>
+                </div>
+              )
             },
             {
               key: 'node',
               label: '普通节点',
               children: (
                 <div>
-                  <div>
+                  <StyledLayerItem>
                     <div data-type="rect" className="custom-rectangle" onMouseDown={startDrag} />
-                  </div>
-                  <div>
+                  </StyledLayerItem>
+                  <StyledLayerItem>
                     <div data-type="circle" className="custom-circle" onMouseDown={startDrag} />
-                  </div>
+                  </StyledLayerItem>
+                  <StyledLayerItem>
+                    <div data-type="ellipse" className="custom-ellipse" onMouseDown={startDrag} />
+                  </StyledLayerItem>
                 </div>
               )
             },
