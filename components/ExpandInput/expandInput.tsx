@@ -6,23 +6,35 @@ import type { InputProps, TextAreaProps } from 'antd/es/input'
 import { StyledExpandInput, StyledExpandIcon } from './styled'
 
 export interface ExpandInputProps extends React.HTMLAttributes<HTMLDivElement> {
+  id?: string
+  value?: string
   inputProps?: InputProps
   textAreaProps?: TextAreaProps
   renderIcon?: (value: boolean) => React.ReactNode
+  onChange?: (values: any) => void
 }
+
+export const defaultRows = 8
 
 const ExpandInput: React.FC<ExpandInputProps> = ({
   renderIcon,
   inputProps = {},
   textAreaProps = {
-    rows: 4
+    rows: defaultRows
   },
   ...props
 }) => {
+  const { id, value, onChange, ...rest } = props
+  const textFiledProps = { id, value }
   const [expanded, setExpanded] = useState<boolean>(false)
 
   const handleExpand = () => {
     setExpanded((prev: boolean) => !prev)
+  }
+
+  const hanldeChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    onChange?.(e)
+    expanded ? textAreaProps?.onChange?.(e as any) : inputProps?.onChange?.(e as any)
   }
 
   const finalIcon = useMemo(() => {
@@ -45,8 +57,17 @@ const ExpandInput: React.FC<ExpandInputProps> = ({
   }, [expanded])
 
   return (
-    <StyledExpandInput {...props}>
-      {expanded ? <Input.TextArea {...textAreaProps} /> : <Input {...inputProps} />}
+    <StyledExpandInput {...rest}>
+      {expanded ? (
+        <Input.TextArea
+          {...textAreaProps}
+          {...textFiledProps}
+          onChange={hanldeChange}
+          autoSize={{ minRows: textAreaProps?.rows ?? defaultRows }}
+        />
+      ) : (
+        <Input {...inputProps} {...textFiledProps} onChange={hanldeChange} />
+      )}
       <StyledExpandIcon>{finalIcon}</StyledExpandIcon>
     </StyledExpandInput>
   )
