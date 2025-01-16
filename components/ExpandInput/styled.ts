@@ -36,7 +36,7 @@ export const StyledExpandInput = styled.div(({ theme }) => {
 
 export const StyledExpandIcon = styled.span`
   position: absolute;
-  top: 5px;
+  top: 8px;
   right: 10px;
   cursor: pointer;
   z-index: 10;
