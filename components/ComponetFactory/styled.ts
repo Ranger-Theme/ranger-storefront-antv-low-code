@@ -5,9 +5,11 @@ export const StyledFactory = styled.div`
   height: 100vh;
   display: flex;
   justify-content: center;
-  align-items: center;
 `
 
 export const StyledComponents = styled.div`
   width: 20vw;
+  display: grid;
+  grid-auto-flow: row;
+  grid-row-gap: 20px;
 `
